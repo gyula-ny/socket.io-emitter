@@ -123,6 +123,17 @@ Emitter.prototype.of = function(nsp){
 Emitter.prototype.emit = function(){
   // packet
   var args = Array.prototype.slice.call(arguments);
+  var cb = err => {
+    if (err) {
+      debug("redis returned error: ", err);
+    }
+  };
+
+  if (typeof args[args.length - 1] === "function") {
+    debug("found callback in emit");
+    cb = args.pop()
+  }
+
   var packet = { type: parser.EVENT, data: args, nsp: this.nsp };
 
   var opts = {
@@ -136,7 +147,7 @@ Emitter.prototype.emit = function(){
     channel += opts.rooms[0] + '#';
   }
   debug('publishing message to channel %s', channel);
-  this.redis.publish(channel, msg);
+  this.redis.publish(channel, msg, cb);
 
   // reset state
   this._rooms = [];
